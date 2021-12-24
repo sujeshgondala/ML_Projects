@@ -4,7 +4,7 @@ Detailed explanation is given in the respective ipnyb files
 please go through the below description for an overview
 
 Project: Titanic for EDA
-Goal: To understand the concepts of EDA on a given data set
+Goal: To understand the concepts of EDA on a Titanic data set.
 my take aways:
 * got an idea of univariant anaylsis
 * got an idea of bi variant anaylsis
@@ -14,7 +14,7 @@ my take aways:
 
 
 Project: Linear Regression
-Goal: To undertand linear regression algoorithm and able to apply it efficiently
+Goal: To undertand linear regression algoorithm and able to apply it efficiently on petrol comnsumption data of different states.
 my take aways:
 * got an idea of using pair plot
 * got an idea of identifying the linear dependency of features with target variable using pair plot
@@ -25,7 +25,7 @@ my take aways:
 
 
 Project: K-means
-Goal: To understand unsupervised data and clustering technique using Keans
+Goal: To understand unsupervised data and clustering technique using Kmeans on credit card user data.
 my take aways:
 * scaling the data using min max scalar and standard scalar
 * fitting a clustering algorithm on the data
@@ -35,7 +35,7 @@ my take aways:
 
 
 Project: SVM breast cancer prediction
-Goal: Understand SVM algorithm and able to implement it effectively
+Goal: Understand SVM algorithm and able to implement it effectively on breast cancer prediction data.
 my take aways:
 * got to undertand what is a support line and how it distinguishes the data
 * got to it can be used for continuous and non continuous target variable
@@ -46,7 +46,7 @@ my take aways:
 
 
 Project: Telecom Churn Rate prediction
-Goal: To do an end to end ML project including all my learnings
+Goal: To do an end to end ML project including all my learnings and provide best possible solutionns to handle churn rate in telecom industry.
 my take awyas:
 * understanding the Data and making inferences out of it before starting EDA to help me perform EDA more effeciently
 * got to learn a technique to split the numerical and categorical features and work on them seperately and then assemble them together, this way handling them is bit easier
