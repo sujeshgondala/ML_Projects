@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiring Agent · Autonomous</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d0e12;
+  --paper: #f5f3ee;
+  --paper2: #edeae2;
+  --paper3: #e2dfd6;
+  --line: #d4d0c6;
+  --line2: #c4c0b4;
+  --text: #1a1b20;
+  --text2: #6b6860;
+  --text3: #9b9890;
+  --accent: #1a3a6e;
+  --accent-light: #e8edf5;
+  --green: #1a5c3a;
+  --green-light: #e6f2ec;
+  --amber: #7a4a00;
+  --amber-light: #fdf3e0;
+  --red: #7a1a1a;
+  --red-light: #fde8e8;
+  --blue: #1a3a6e;
+  --purple: #3d1a6e;
+  --purple-light: #ede8f5;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Fraunces', Georgia, serif;
+  background: var(--paper);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Grain texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.6;
+}
+
+header {
+  border-bottom: 2px solid var(--ink);
+  padding: 18px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--paper);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: 'Fraunces', serif;
+  font-size: 20px; font-weight: 700;
+  letter-spacing: -0.5px;
+  display: flex; align-items: center; gap: 12px;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--ink);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--paper); font-size: 16px;
+}
+.mode-pill {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  padding: 5px 12px; border-radius: 2px;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  border: 1.5px solid var(--ink);
+  display: none;
+}
+.mode-pill.rigorous { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.mode-pill.fasthire { background: var(--amber-light); color: var(--amber); border-color: var(--amber); }
+.mode-pill.visible { display: block; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  min-height: calc(100vh - 65px);
+  position: relative; z-index: 1;
+}
+
+/* LEFT: Chat / Intake */
+.sidebar {
+  border-right: 2px solid var(--ink);
+  display: flex; flex-direction: column;
+  background: var(--paper);
+}
+.sidebar-header {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.sidebar-title {
+  font-size: 13px; font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text2);
+}
+.sidebar-sub {
+  font-size: 15px; margin-top: 4px; color: var(--text);
+  font-style: italic; font-weight: 300;
+}
+
+.chat-area {
+  flex: 1; overflow-y: auto;
+  padding: 20px 28px;
+  display: flex; flex-direction: column;
+  gap: 16px;
+}
+.chat-area::-webkit-scrollbar { width: 3px; }
+.chat-area::-webkit-scrollbar-thumb { background: var(--line2); }
+
+.msg {
+  display: flex; flex-direction: column; gap: 4px;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.msg-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text3);
+}
+.msg-bubble {
+  padding: 12px 16px;
+  border-radius: 2px;
+  font-size: 14px; line-height: 1.6;
+  max-width: 100%;
+  border: 1px solid var(--line);
+}
+.msg.agent .msg-bubble {
+  background: var(--paper2);
+  border-left: 3px solid var(--ink);
+}
+.msg.user .msg-bubble {
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  color: var(--accent);
+  margin-left: 20px;
+}
+.msg.system .msg-bubble {
+  background: var(--green-light);
+  border-left: 3px solid var(--green);
+  color: var(--green);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+/* Answer options */
+.options-group {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 4px;
+}
+.opt-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  padding: 10px 16px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  color: var(--text);
+}
+.opt-btn:hover { background: var(--paper2); border-color: var(--ink); }
+.opt-btn.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.opt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Free text input */
+.chat-input-area {
+  border-top: 1px solid var(--line);
+  padding: 16px 28px;
+  display: flex; gap: 10px;
+}
+.chat-input {
+  flex: 1;
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  padding: 10px 14px;
+  background: var(--paper2);
+  border: 1.5px solid var(--line);
+  border-radius: 2px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--ink); }
+.send-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600;
+  padding: 10px 16px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none; border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: opacity 0.2s;
+}
+.send-btn:hover { opacity: 0.8; }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* RIGHT: Dashboard */
+.dashboard {
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+.dash-header {
+  margin-bottom: 28px;
+}
+.dash-title {
+  font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+}
+.dash-role {
+  font-size: 14px; color: var(--text2);
+  margin-top: 4px; font-style: italic;
+  font-weight: 300;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 60vh;
+  text-align: center;
+  color: var(--text3);
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.empty-title { font-size: 18px; font-weight: 600; font-style: italic; }
+.empty-sub { font-size: 14px; margin-top: 6px; font-weight: 300; }
+
+/* Pipeline steps */
+.pipeline {
+  display: flex; flex-direction: column; gap: 16px;
+  margin-bottom: 32px;
+}
+.step-card {
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.step-card.active { border-color: var(--ink); }
+.step-card.done { border-color: var(--green); }
+.step-card.skipped { border-color: var(--line); opacity: 0.5; }
+
+.step-header {
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--paper2);
+  cursor: pointer;
+  user-select: none;
+}
+.step-status {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  transition: all 0.3s;
+}
+.step-card.active .step-status {
+  border-color: var(--ink);
+  background: var(--ink); color: var(--paper);
+  animation: stepPulse 1.5s ease-in-out infinite;
+}
+@keyframes stepPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(13,14,18,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(13,14,18,0); }
+}
+.step-card.done .step-status {
+  border-color: var(--green);
+  background: var(--green); color: white;
+}
+.step-card.skipped .step-status { border-style: dashed; }
+
+.step-info { flex: 1; }
+.step-name { font-size: 15px; font-weight: 600; }
+.step-desc { font-size: 12px; color: var(--text2); margin-top: 2px; font-weight: 300; font-style: italic; }
+.step-time {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text3);
+}
+
+.step-body {
+  padding: 20px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.step-body.open { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* JD preview */
+.jd-preview {
+  font-size: 13px; line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Candidate table */
+.cand-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cand-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text2);
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1.5px solid var(--ink);
+}
+.cand-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.cand-table tr:last-child td { border-bottom: none; }
+.cand-table tr:hover td { background: var(--paper2); }
+
+.score-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600;
+  padding: 3px 8px; border-radius: 2px;
+  display: inline-block;
+}
+.score-high { background: var(--green-light); color: var(--green); }
+.score-mid { background: var(--amber-light); color: var(--amber); }
+.score-low { background: var(--red-light); color: var(--red); }
+
+.status-chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 8px; border-radius: 2px;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.chip-selected { background: var(--green-light); color: var(--green); }
+.chip-hired { background: var(--purple-light); color: var(--purple); }
+.chip-scheduled { background: var(--accent-light); color: var(--accent); }
+.chip-pass { background: var(--paper3); color: var(--text3); }
+
+/* Calendar slots */
+.slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.slot-card {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 12px;
+  font-size: 12px;
+}
+.slot-card.booked { border-color: var(--accent); background: var(--accent-light); }
+.slot-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.slot-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2); }
+.slot-panel { color: var(--text3); font-size: 11px; margin-top: 3px; font-style: italic; }
+
+/* Email preview */
+.email-card {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.email-header {
+  padding: 10px 14px;
+  background: var(--paper2);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.email-to { font-family: 'IBM Plex Mono', monospace; color: var(--text2); }
+.email-subj { font-weight: 600; color: var(--text); }
+.email-body {
+  padding: 12px 14px;
+  font-size: 13px; line-height: 1.6;
+  color: var(--text2); font-style: italic;
+  font-weight: 300;
+}
+
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 28px;
+}
+.stat-card {
+  border: 1.5px solid var(--line);
+  border-radius: 4px; padding: 16px 18px;
+  background: var(--paper2);
+}
+.stat-val {
+  font-size: 28px; font-weight: 700;
+  font-style: italic;
+  letter-spacing: -1px;
+}
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text2);
+  letter-spacing: 0.8px; text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Spinner */
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Typing dots */
+.typing { display: flex; gap: 4px; padding: 4px 0; }
+.typing span {
+  width: 6px; height: 6px;
+  background: var(--text3);
+  border-radius: 50%;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+/* Progress bar */
+.progress-bar {
+  height: 3px; background: var(--line);
+  border-radius: 2px; overflow: hidden;
+  margin-top: 12px;
+}
+.progress-fill {
+  height: 100%; background: var(--ink);
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 2px solid var(--ink); max-height: 50vh; }
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .slots-grid { grid-template-columns: repeat(2,1fr); }
+  header { padding: 16px 20px; }
+  .dashboard { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    Hiring Agent
+  </div>
+  <span class="mode-pill" id="mode-pill">—</span>
+</header>
+
+<div class="layout">
+  <!-- LEFT: Intake Chat -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Agent Intake</div>
+      <div class="sidebar-sub">Tell me what you need to hire for</div>
+    </div>
+    <div class="chat-area" id="chat-area"></div>
+    <div class="chat-input-area" id="input-area">
+      <input class="chat-input" id="chat-input" placeholder="Type your answer..." onkeydown="if(event.key==='Enter')sendMessage()" />
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">◎</div>
+      <div class="empty-title">Agent is standing by</div>
+      <div class="empty-sub">Answer the intake questions to begin autonomous hiring</div>
+    </div>
+
+    <div id="dash-content" style="display:none;">
+      <div class="dash-header">
+        <div class="dash-title" id="dash-title">Hiring Pipeline</div>
+        <div class="dash-role" id="dash-role"></div>
+        <div class="progress-bar" style="margin-top:16px;">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-applied">—</div>
+          <div class="stat-label">Applications</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-shortlisted">—</div>
+          <div class="stat-label">Shortlisted</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-action">—</div>
+          <div class="stat-label" id="stat-action-label">Interviews Scheduled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-time">—</div>
+          <div class="stat-label">Time Saved</div>
+        </div>
+      </div>
+
+      <div class="pipeline" id="pipeline"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://api.anthropic.com/v1/messages";
+
+// ── State ─────────────────────────────────────────────────────
+let state = {
+  phase: 'intake',   // intake | running | done
+  answers: {},
+  mode: null,        // 'rigorous' | 'fasthire'
+  jobData: null,
+  candidates: [],
+  openedSteps: new Set()
+};
+
+// ── Chat helpers ──────────────────────────────────────────────
+function addMsg(role, html, typing=false) {
+  const area = document.getElementById('chat-area');
+  const labels = { agent: 'Hiring Agent', user: 'You', system: 'System' };
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-label">${labels[role]}</div><div class="msg-bubble">${html}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+function addTyping() {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'msg agent'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-label">Hiring Agent</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
+
+function addOptions(options, callback) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'msg agent'; div.id = 'options-msg';
+  const btns = options.map((o,i) => `<button class="opt-btn" onclick="pickOption(${i},'${o.replace(/'/g,"\\'")}',this)">${o}</button>`).join('');
+  div.innerHTML = `<div class="msg-label">Choose one</div><div class="options-group">${btns}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  window._optCallback = callback;
+}
+function pickOption(i, val, btn) {
+  document.querySelectorAll('.opt-btn').forEach(b => { b.disabled = true; });
+  btn.classList.add('selected');
+  setTimeout(() => {
+    document.getElementById('options-msg')?.remove();
+    addMsg('user', val);
+    if (window._optCallback) window._optCallback(val);
+  }, 300);
+}
+
+function setInputVisible(v) {
+  document.getElementById('input-area').style.display = v ? 'flex' : 'none';
+}
+
+// ── Claude call ───────────────────────────────────────────────
+// OFFLINE DEMO MODE — no API needed
+const OFFLINE_JD = {
+  title: null, department: "Technology", 
+  overview: "We are looking for a talented professional to join our team and drive meaningful outcomes across a high-impact function. You will collaborate with cross-functional leaders and bring analytical rigour and creative problem-solving to complex challenges.",
+  responsibilities: ["Lead end-to-end delivery of core function objectives","Partner with business unit heads to align priorities","Build and mentor a high-performing team","Define and track KPIs, reporting to senior leadership","Drive continuous improvement and innovation"],
+  requirements: ["5+ years of relevant experience","Proven track record of leading cross-functional initiatives","Strong communication and stakeholder management skills","Data-driven mindset with experience using analytics tools","Prior experience in a fast-paced, high-growth environment"],
+  offer: ["Competitive compensation and equity","Flexible hybrid work model","Learning & development budget","Comprehensive health benefits","Annual performance bonus"],
+  salary: "Competitive — based on experience and market benchmarks"
+};
+
+const OFFLINE_CANDIDATES = [
+  { name: "Arjun Sharma",    yoe: 7, background: "7 yrs exp at Flipkart & Razorpay, led 3 product launches", score: 94, tags: ["Leadership","Analytics","SaaS"], verdict: "Selected" },
+  { name: "Priya Nair",      yoe: 5, background: "5 yrs exp, ex-McKinsey, strong cross-functional track record", score: 88, tags: ["Strategy","Stakeholder Mgmt"], verdict: "Selected" },
+  { name: "Rahul Verma",     yoe: 4, background: "4 yrs at early-stage startup, high-potential, certifications", score: 71, tags: ["Technical Skills","Agile"], verdict: "Rejected" },
+  { name: "Divya Menon",     yoe: 6, background: "6 yrs in consulting then ops role, solid fundamentals", score: 63, tags: ["Communication","Process"], verdict: "Rejected" },
+  { name: "Vikram Iyer",     yoe: 3, background: "3 yrs exp, recently promoted, strong references", score: 55, tags: ["Team Fit","Growth Mindset"], verdict: "Rejected" }
+];
+
+const OFFLINE_FAST_CANDIDATES = (positions) => [
+  { name: "Sunita Joshi",  applied_time: "9:02 AM", qualified: true,  verdict: positions >= 1 ? "Hired"       : "Waitlisted",   reason: positions >= 1 ? "Hired — position available" : "Qualified but positions filled" },
+  { name: "Deepak Rao",    applied_time: "9:15 AM", qualified: true,  verdict: positions >= 2 ? "Hired"       : "Waitlisted",   reason: positions >= 2 ? "Hired — position available" : "Qualified but positions filled" },
+  { name: "Kavya Pillai",  applied_time: "9:31 AM", qualified: true,  verdict: positions >= 3 ? "Hired"       : "Waitlisted",   reason: positions >= 3 ? "Hired — position available" : "Qualified but positions filled" },
+  { name: "Manoj Singh",   applied_time: "9:44 AM", qualified: false, verdict: "Not Qualified", reason: "Does not meet minimum requirements" },
+  { name: "Meera Das",     applied_time: "10:02 AM",qualified: false, verdict: "Not Qualified", reason: "Incomplete application" }
+];
+
+async function claude(system, user, json=false) {
+  // Offline mode: simulate thinking delay, return scripted data
+  await sleep(1400 + Math.random() * 600);
+  if (!json) return '';
+  // Detect which call this is by inspecting the user prompt
+  if (user.includes('Job description') || user.includes('job description')) return null; // triggers mockJD
+  if (user.includes('5 realistic applicants') || user.includes('Score each')) {
+    return { applicants: OFFLINE_CANDIDATES };
+  }
+  if (user.includes('5 applicants') && user.includes('positions available')) {
+    const pos = parseInt(user.match(/(\d+) positions available/)?.[1]) || 1;
+    return { applicants: OFFLINE_FAST_CANDIDATES(pos) };
+  }
+  return null;
+}
+
+function mockJD(role) {
+  const jd = Object.assign({}, OFFLINE_JD);
+  jd.title = role;
+  return jd;
+}
+
+function mockApplicants(role, count) {
+  return OFFLINE_CANDIDATES;
+}
+
+function mockFastApplicants(role, positions) {
+  return OFFLINE_FAST_CANDIDATES(positions);
+}
+
+// ── Intake flow ───────────────────────────────────────────────
+const INTAKE = [
+  { key: 'role', ask: "What role do you need to hire for?", type: 'text', placeholder: 'e.g. Senior Data Scientist' },
+  { key: 'count', ask: null, type: 'text', placeholder: 'e.g. 1 or 5' },
+  { key: 'deadline', ask: null, type: 'options', options: ['ASAP — within this week', 'Within 2 weeks', 'Within a month', 'No hard deadline'] },
+  { key: 'depth', ask: null, type: 'options', options: ['Yes — thorough screening + interviews needed', 'No — first-come-first-served is fine'] },
+];
+
+let intakeStep = 0;
+let roleContext = '';
+
+async function startIntake() {
+  setInputVisible(false);
+  addMsg('agent', "Hello! I'm your Hiring Agent. I'll ask you a few quick questions, then take it from there — posting the JD, screening candidates, scheduling interviews, and sending notifications. All on my own.");
+  await sleep(800);
+  askNext();
+}
+
+async function askNext() {
+  const q = INTAKE[intakeStep];
+  if (intakeStep === 0) {
+    addMsg('agent', "First — what role do you need to hire for?");
+    setInputVisible(true);
+    document.getElementById('chat-input').focus();
+    return;
+  }
+  if (intakeStep === 1) {
+    addMsg('agent', `Got it — <strong>${state.answers.role}</strong>. How many positions do you need to fill?`);
+    setInputVisible(true);
+    return;
+  }
+  if (intakeStep === 2) {
+    addMsg('agent', `And what's your hiring timeline for these ${state.answers.count} ${state.answers.role} role(s)?`);
+    setInputVisible(false);
+    addOptions(INTAKE[2].options, val => { state.answers.deadline = val; intakeStep++; askNext(); });
+    return;
+  }
+  if (intakeStep === 3) {
+    addMsg('agent', `One last thing — does this role need rigorous screening and interviews, or can you hire directly from applications?`);
+    setInputVisible(false);
+    addOptions(INTAKE[3].options, async val => {
+      state.answers.depth = val;
+      await decideMode();
+    });
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  addMsg('user', val);
+  setInputVisible(false);
+
+  if (intakeStep === 0) { state.answers.role = val; intakeStep++; await sleep(400); askNext(); }
+  else if (intakeStep === 1) { state.answers.count = val; intakeStep++; await sleep(400); askNext(); }
+}
+
+async function decideMode() {
+  addTyping();
+  await sleep(1200);
+  removeTyping();
+
+  const isUrgent = state.answers.deadline.includes('ASAP') || state.answers.deadline.includes('week');
+  const needsScreening = state.answers.depth.startsWith('Yes');
+  const isHighVolume = parseInt(state.answers.count) > 3;
+
+  if (needsScreening && !isHighVolume) {
+    state.mode = 'rigorous';
+    addMsg('agent', `Based on your answers, I'm running this in <strong>Rigorous Hiring Mode</strong> — I'll screen all applicants carefully, shortlist the top candidates, schedule first-round interviews, and notify everyone automatically.`);
+  } else {
+    state.mode = 'fasthire';
+    addMsg('agent', `Based on your answers, I'm running this in <strong>Fast-Hire Mode</strong> — I'll create the JD, then directly extend offers to qualified applicants on a first-come-first-served basis until all ${state.answers.count} position(s) are filled.`);
+  }
+
+  const pill = document.getElementById('mode-pill');
+  pill.textContent = state.mode === 'rigorous' ? '⬤ Rigorous Mode' : '⬤ Fast-Hire Mode';
+  pill.className = `mode-pill visible ${state.mode}`;
+
+  await sleep(1000);
+  addMsg('agent', `Starting now. Watch the dashboard — I'll update it in real time as I work through each step.`);
+  await sleep(800);
+  addMsg('system', `▶ Pipeline initiated · ${state.mode.toUpperCase()} MODE · ${state.answers.count} position(s)`);
+  setInputVisible(false);
+
+  await sleep(600);
+  beginPipeline();
+}
+
+// ── Pipeline ──────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+const STEPS_RIGOROUS = [
+  { id: 'jd',        name: 'Create & Post JD',           desc: 'Drafting inclusive job description + posting' },
+  { id: 'screen',    name: 'Screen & Score Applicants',  desc: 'Evaluating all applications against criteria' },
+  { id: 'shortlist', name: 'Shortlist Top Candidates',   desc: 'Selecting top scorers for next stage' },
+  { id: 'schedule',  name: 'Schedule Interviews',        desc: 'Finding slots + sending calendar invites' },
+  { id: 'notify',    name: 'Send Notifications',         desc: 'Emailing all candidates with outcomes' },
+];
+const STEPS_FASTHIRE = [
+  { id: 'jd',     name: 'Create & Post JD',       desc: 'Drafting role + publishing immediately' },
+  { id: 'screen', name: 'Review Applications',    desc: 'Checking basic qualification on first-come basis' },
+  { id: 'offers', name: 'Extend Offers',          desc: 'Auto-sending offers until positions filled' },
+  { id: 'notify', name: 'Send Notifications',     desc: 'Notifying all applicants of outcome' },
+];
+
+function buildPipeline() {
+  const steps = state.mode === 'rigorous' ? STEPS_RIGOROUS : STEPS_FASTHIRE;
+  const el = document.getElementById('pipeline');
+  el.innerHTML = '';
+  steps.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'step-card'; div.id = `step-${s.id}`;
+    div.innerHTML = `
+      <div class="step-header" onclick="toggleStep('${s.id}')">
+        <div class="step-status" id="status-${s.id}">○</div>
+        <div class="step-info">
+          <div class="step-name">${s.name}</div>
+          <div class="step-desc">${s.desc}</div>
+        </div>
+        <div class="step-time" id="time-${s.id}">pending</div>
+      </div>
+      <div class="step-body" id="body-${s.id}"></div>`;
+    el.appendChild(div);
+  });
+}
+
+function toggleStep(id) {
+  const body = document.getElementById(`body-${id}`);
+  if (body.innerHTML.trim()) body.classList.toggle('open');
+}
+
+function setStep(id, status) {
+  const card = document.getElementById(`step-${id}`);
+  const badge = document.getElementById(`status-${id}`);
+  const time = document.getElementById(`time-${id}`);
+  card.className = `step-card ${status}`;
+  badge.textContent = status === 'done' ? '✓' : status === 'active' ? '●' : status === 'skipped' ? '—' : '○';
+  if (status === 'active') time.textContent = 'running…';
+  if (status === 'done') time.textContent = 'complete';
+}
+
+function setBody(id, html) {
+  const body = document.getElementById(`body-${id}`);
+  body.innerHTML = html;
+  body.classList.add('open');
+}
+
+function updateStats(applied, shortlisted, action, time) {
+  if (applied !== null) document.getElementById('stat-applied').textContent = applied;
+  if (shortlisted !== null) document.getElementById('stat-shortlisted').textContent = shortlisted;
+  if (action !== null) document.getElementById('stat-action').textContent = action;
+  if (time !== null) document.getElementById('stat-time').textContent = time;
+}
+
+function updateProgress(pct) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+async function beginPipeline() {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('dash-content').style.display = 'block';
+  document.getElementById('dash-title').textContent = state.answers.role;
+  document.getElementById('dash-role').textContent = `${state.answers.count} position(s) · ${state.mode === 'rigorous' ? 'Rigorous Mode' : 'Fast-Hire Mode'} · ${state.answers.deadline}`;
+  document.getElementById('stat-action-label').textContent = state.mode === 'rigorous' ? 'Interviews Scheduled' : 'Offers Extended';
+
+  buildPipeline();
+  updateStats(0, 0, 0, '0 hrs');
+
+  if (state.mode === 'rigorous') await runRigorous();
+  else await runFastHire();
+}
+
+// ── RIGOROUS FLOW ─────────────────────────────────────────────
+async function runRigorous() {
+  // Step 1: JD
+  setStep('jd', 'active'); updateProgress(5);
+  addMsg('system', `◈ Generating job description for ${state.answers.role}…`);
+
+  let jdData = await claude(
+    `Return ONLY a JSON object, no markdown, no extra text. Schema: {"title":"string","department":"string","overview":"string","responsibilities":["string"],"requirements":["string"],"offer":["string"],"salary":"string"}`,
+    `Job description for: ${state.answers.role} at a modern tech company.`, true
+  );
+  if (!jdData) jdData = mockJD(state.answers.role);
+  state.jobData = jdData;
+
+  setStep('jd', 'done'); updateProgress(20);
+  setBody('jd', `<div class="jd-preview"><strong>${jdData.title}</strong> · ${jdData.department}\n\n${jdData.overview}\n\n<strong>Responsibilities</strong>\n${(jdData.responsibilities||[]).map(r=>'• '+r).join('\n')}\n\n<strong>Requirements</strong>\n${(jdData.requirements||[]).map(r=>'• '+r).join('\n')}\n\n<strong>We Offer</strong>\n${(jdData.offer||[]).map(o=>'• '+o).join('\n')}\n\n<strong>Compensation:</strong> ${jdData.salary}</div>`);
+  addMsg('system', `✓ JD created and posted · ${jdData.title}`);
+  await sleep(600);
+
+  // Step 2: Screen
+  setStep('screen', 'active'); updateProgress(35);
+  addMsg('system', `◈ Simulating incoming applications and scoring…`);
+
+  let screenData = await claude(
+    `Return ONLY a JSON object, no markdown, no extra text. Schema: {"applicants":[{"name":"string","yoe":0,"background":"string","score":0,"tags":["string"],"verdict":"Selected"}]}. Include exactly 5 applicants. Top 2 get verdict "Selected", rest get "Rejected".`,
+    `Generate exactly 5 realistic applicants for: ${state.answers.role}. Score each 0-100.`, true
+  );
+  if (!screenData || !screenData.applicants) screenData = { applicants: mockApplicants(state.answers.role, 3) };
+
+  state.candidates = screenData.applicants || mockApplicants(state.answers.role, 3);
+  const selected = state.candidates.filter(c => c.verdict === 'Selected');
+  updateStats(state.candidates.length, selected.length, null, null);
+  setStep('screen', 'done'); updateProgress(50);
+
+  const tableRows = state.candidates.map(c => {
+    const sc = c.score >= 75 ? 'score-high' : c.score >= 55 ? 'score-mid' : 'score-low';
+    const chip = c.verdict === 'Selected' ? 'chip-selected' : 'chip-pass';
+    const chipLabel = c.verdict === 'Selected' ? 'Selected' : 'Pass';
+    return `<tr><td><strong>${c.name}</strong><br><span style="color:var(--text2);font-size:11px;">${c.background}</span></td><td>${c.yoe}y</td><td><span class="score-badge ${sc}">${c.score}</span></td><td>${(c.tags||[]).join(', ')}</td><td><span class="status-chip ${chip}">${chipLabel}</span></td></tr>`;
+  }).join('');
+  setBody('screen', `<table class="cand-table"><thead><tr><th>Candidate</th><th>Exp</th><th>Score</th><th>Strengths</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table>`);
+  addMsg('system', `✓ ${state.candidates.length} applications reviewed · ${selected.length} shortlisted`);
+  await sleep(600);
+
+  // Step 3: Shortlist
+  setStep('shortlist', 'active'); updateProgress(60);
+  await sleep(1200);
+  setStep('shortlist', 'done'); updateProgress(70);
+  const shortRows = selected.map(c => {
+    const sc = c.score >= 75 ? 'score-high' : 'score-mid';
+    return `<tr><td><strong>${c.name}</strong></td><td>${c.yoe}y</td><td><span class="score-badge ${sc}">${c.score}</span></td><td>${(c.tags||[]).slice(0,2).join(', ')}</td><td><span class="status-chip chip-selected">Shortlisted</span></td></tr>`;
+  }).join('');
+  setBody('shortlist', `<p style="font-size:13px;color:var(--text2);margin-bottom:14px;font-style:italic;">Top ${selected.length} candidate(s) selected for first-round interviews based on score and fit.</p><table class="cand-table"><thead><tr><th>Candidate</th><th>Exp</th><th>Score</th><th>Top Skills</th><th>Status</th></tr></thead><tbody>${shortRows}</tbody></table>`);
+  addMsg('system', `✓ Shortlist confirmed · ${selected.length} candidate(s) advancing`);
+  await sleep(500);
+
+  // Step 4: Schedule
+  setStep('schedule', 'active'); updateProgress(80);
+  addMsg('system', `◈ Finding available interview slots and booking calendar…`);
+
+  const days = ['Mon Mar 10', 'Tue Mar 11', 'Wed Mar 12'];
+  const times = ['10:00 AM', '2:00 PM', '4:00 PM'];
+  const slots = selected.map((c, i) => ({
+    name: c.name,
+    day: days[i % 3],
+    time: times[i % 3],
+    panel: 'Hiring Manager + HR Lead'
+  }));
+  updateStats(null, null, selected.length, null);
+
+  await sleep(1400);
+  setStep('schedule', 'done'); updateProgress(90);
+  const slotCards = slots.map(s => `<div class="slot-card booked"><div class="slot-name">${s.name}</div><div class="slot-time">📅 ${s.day} · ${s.time}</div><div class="slot-panel">${s.panel}</div></div>`).join('');
+  setBody('schedule', `<div class="slots-grid">${slotCards}</div>`);
+  addMsg('system', `✓ ${slots.length} interview(s) scheduled and calendar invites sent`);
+  await sleep(500);
+
+  // Step 5: Notify
+  setStep('notify', 'active'); updateProgress(95);
+  addMsg('system', `◈ Composing and sending candidate notifications…`);
+  await sleep(1200);
+
+  const emails = [
+    ...selected.map(c => ({ to: c.name, subj: `Interview Confirmed — ${jdData.title}`, body: `Hi ${c.name.split(' ')[0]}, congratulations! You've been shortlisted for the ${jdData.title} role. Your interview has been scheduled — please check your calendar for the invite.` })),
+    ...state.candidates.filter(c => c.verdict === 'Rejected').slice(0,2).map(c => ({ to: c.name, subj: `Update on your application — ${jdData.title}`, body: `Hi ${c.name.split(' ')[0]}, thank you for your interest in the ${jdData.title} role. After careful review, we won't be moving forward at this time. We'll keep your profile on file for future opportunities.` }))
+  ];
+
+  setStep('notify', 'done'); updateProgress(100);
+  const emailHtml = emails.map(e => `<div class="email-card"><div class="email-header"><span class="email-to">To: ${e.to}</span><span class="email-subj">${e.subj}</span></div><div class="email-body">${e.body}</div></div>`).join('');
+  setBody('notify', emailHtml);
+  updateStats(null, null, null, '~14 hrs');
+  addMsg('system', `✓ ${emails.length} notifications sent to all candidates`);
+
+  await sleep(500);
+  addMsg('agent', `✅ Done! I've completed the full hiring pipeline for <strong>${state.answers.role}</strong>. ${selected.length} candidate(s) are shortlisted and interviewed. All notifications sent. Ready for your next hire.`);
+  state.phase = 'done';
+}
+
+// ── FAST-HIRE FLOW ────────────────────────────────────────────
+async function runFastHire() {
+  const totalPositions = parseInt(state.answers.count) || 1;
+
+  // Step 1: JD
+  setStep('jd', 'active'); updateProgress(5);
+  addMsg('system', `◈ Generating job description for ${state.answers.role}…`);
+
+  let jdData2 = await claude(
+    `Return ONLY a JSON object, no markdown, no extra text. Schema: {"title":"string","department":"string","overview":"string","responsibilities":["string"],"requirements":["string"],"salary":"string"}`,
+    `Job description for: ${state.answers.role}. ${totalPositions} positions. Keep requirements accessible.`, true
+  );
+  if (!jdData2) jdData2 = mockJD(state.answers.role);
+  const jdData = jdData2;
+  state.jobData = jdData;
+
+  setStep('jd', 'done'); updateProgress(25);
+  setBody('jd', `<div class="jd-preview"><strong>${jdData.title}</strong> · ${jdData.department} · <em>${totalPositions} opening(s)</em>\n\n${jdData.overview}\n\n<strong>Responsibilities</strong>\n${(jdData.responsibilities||[]).map(r=>'• '+r).join('\n')}\n\n<strong>Requirements</strong>\n${(jdData.requirements||[]).map(r=>'• '+r).join('\n')}\n\n<strong>Compensation:</strong> ${jdData.salary}</div>`);
+  addMsg('system', `✓ JD posted · Applications open`);
+  await sleep(600);
+
+  // Step 2: Review applications
+  setStep('screen', 'active'); updateProgress(40);
+  addMsg('system', `◈ Applications coming in — reviewing on first-come-first-served basis…`);
+
+  const n = 5;
+  let screenData2 = await claude(
+    `Return ONLY a JSON object, no markdown, no extra text. Schema: {"applicants":[{"name":"string","applied_time":"string","qualified":true,"verdict":"Hired","reason":"string"}]}. First ${totalPositions} qualified get Hired, next 2 get Waitlisted, rest get Not Qualified.`,
+    `Generate exactly 5 applicants for: ${state.answers.role}. ${totalPositions} positions available.`, true
+  );
+  if (!screenData2 || !screenData2.applicants) screenData2 = { applicants: mockFastApplicants(state.answers.role, totalPositions) };
+  state.candidates = screenData2.applicants || mockFastApplicants(state.answers.role, totalPositions);
+  const hired = state.candidates.filter(c => c.verdict === 'Hired');
+  updateStats(state.candidates.length, hired.length, null, null);
+
+  setStep('screen', 'done'); updateProgress(65);
+  const rows = state.candidates.map(c => {
+    const chip = c.verdict === 'Hired' ? 'chip-hired' : c.verdict === 'Waitlisted' ? 'chip-selected' : 'chip-pass';
+    return `<tr><td><strong>${c.name}</strong></td><td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);">${c.applied_time}</td><td>${c.qualified ? '✓' : '—'}</td><td><span class="status-chip ${chip}">${c.verdict}</span></td><td style="font-size:12px;color:var(--text2);">${c.reason}</td></tr>`;
+  }).join('');
+  setBody('screen', `<p style="font-size:13px;color:var(--text2);margin-bottom:14px;font-style:italic;">First-come-first-served · ${totalPositions} position(s) to fill</p><table class="cand-table"><thead><tr><th>Applicant</th><th>Applied</th><th>Qualified</th><th>Status</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table>`);
+  addMsg('system', `✓ ${state.candidates.length} applications reviewed · ${hired.length}/${totalPositions} positions filled`);
+  await sleep(500);
+
+  // Step 3: Extend Offers
+  setStep('offers', 'active'); updateProgress(80);
+  addMsg('system', `◈ Auto-extending offers to ${hired.length} selected candidate(s)…`);
+  await sleep(1200);
+  updateStats(null, null, hired.length, null);
+  setStep('offers', 'done'); updateProgress(90);
+  const offerHtml = hired.map(c => `<div class="email-card"><div class="email-header"><span class="email-to">Offer → ${c.name}</span><span class="email-subj" style="color:var(--purple);">Offer Extended — ${jdData.title}</span></div><div class="email-body">Hi ${c.name.split(' ')[0]}, we're pleased to extend you an offer for the ${jdData.title} position. Compensation: ${jdData.salary}. Please confirm acceptance within 24 hours.</div></div>`).join('');
+  setBody('offers', offerHtml);
+  addMsg('system', `✓ ${hired.length} offer(s) extended automatically`);
+  await sleep(500);
+
+  // Step 4: Notify all
+  setStep('notify', 'active'); updateProgress(95);
+  addMsg('system', `◈ Notifying all applicants…`);
+  await sleep(1000);
+  setStep('notify', 'done'); updateProgress(100);
+  const notifHtml = state.candidates.filter(c => c.verdict !== 'Hired').slice(0,3).map(c => `<div class="email-card"><div class="email-header"><span class="email-to">To: ${c.name}</span><span class="email-subj">Update on your application — ${jdData.title}</span></div><div class="email-body">Hi ${c.name.split(' ')[0]}, thank you for applying. ${c.verdict === 'Waitlisted' ? "All positions have been filled but we've added you to our waitlist." : "Unfortunately we've filled all positions at this time. We'll reach out for future opportunities."}</div></div>`).join('');
+  setBody('notify', `${notifHtml}<p style="font-size:12px;color:var(--text2);margin-top:12px;font-style:italic;">+ ${Math.max(0, state.candidates.length - 3)} more notifications sent</p>`);
+  updateStats(null, null, null, '~2 hrs');
+
+  await sleep(500);
+  addMsg('agent', `✅ All ${totalPositions} position(s) for <strong>${state.answers.role}</strong> have been filled. Offers sent, all applicants notified. Total time: under 2 hours vs. weeks manually.`);
+  state.phase = 'done';
+}
+
+// ── Boot ──────────────────────────────────────────────────────
+window.onload = () => startIntake();
+</script>
+</body>
+</html>
